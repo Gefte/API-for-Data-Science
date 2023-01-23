@@ -7,7 +7,7 @@ app = FastAPI()
 
 model = load_model("backend/model.h5")
 
-@app.post("/predict")
+@app.get("/predict")
 def predict(
         age: float,
         sex: int, 
@@ -25,8 +25,9 @@ def predict(
     input_vector = np.array([age, sex, chest_pain_type, resting_bp, cholesterol, fasting_bs,
                             resting_ecg, max_hr, exercise_angina, oldpeak, st_slope]).reshape(1, 11)
 
-  
+    
     prediction = model.predict(input_vector)
     class_idx = np.argmax(prediction[0])
     class_probability = prediction[0][class_idx]
+    
     return {"prediction": class_idx, "probability": class_probability, "data":input_vector}
