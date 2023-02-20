@@ -141,32 +141,32 @@ def main(train_data_path: str, saved_model_path: str, input_data_path: str = Non
     Returns:
     - None.
     """
-    # Load training data
+
     train_data = pd.read_csv(train_data_path)
 
-    # Split into features and labels
+    
     X = train_data.drop(columns=['target'])
     y = train_data['target']
 
-    # Split into train and validation sets
+ 
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Initialize scaler and encoder
+    
     scaler = StandardScaler()
     encoder = OneHotEncoder()
 
-    # Scale numeric features and encode categorical features
+   
     scaled_train_data = scaler.fit_transform(X_train[numerical_features])
     encoded_train_data = encoder.fit_transform(X_train[categorical_features]).toarray()
 
-    # Combine scaled and encoded data
+   
     preprocessed_train_data = np.concatenate([scaled_train_data, encoded_train_data], axis=1)
 
-    # Train machine learning model
+ 
     model = XGBClassifier()
     model.fit(preprocessed_train_data, y_train)
 
-    # Evaluate model on validation set
+
     scaled_val_data = scaler.transform(X_val[numerical_features])
     encoded_val_data = encoder.transform(X_val[categorical_features]).toarray()
     preprocessed_val_data = np.concatenate([scaled_val_data, encoded_val_data], axis=1)
