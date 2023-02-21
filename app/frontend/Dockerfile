@@ -1,13 +1,10 @@
-FROM node:14-alpine
+FROM python:3.10
 
 WORKDIR /app
 
-COPY package*.json ./
-
-RUN npm install
+COPY requirements.txt requirements.txt
+RUN pip install -r requirements.txt
 
 COPY . .
 
-EXPOSE 3000
-
-CMD [ "npm", "start" ]
+CMD ["streamlit", "run", "app.py", "--server.enableCORS", "false"]
