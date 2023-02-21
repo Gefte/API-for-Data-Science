@@ -18,6 +18,8 @@ Este projeto é um estudo de caso de machine learning com uma API construída co
 
 # Testar a api 
 
+``` python
+
 import requests
 
 headers = {
@@ -45,3 +47,4 @@ json_data = {
 response = requests.post('http://127.0.0.1:8000/predict', headers=headers, json=json_data)
 print(response.status_code)
 print(response.json())
+```
