@@ -15,3 +15,33 @@ Este projeto é um estudo de caso de machine learning com uma API construída co
     "exercise_angina": Presença de angina durante o exercício (0 = não, 1 = sim)
     "oldpeak": Depressão do segmento ST
     "st_slope": Inclinação do segmento ST
+
+# Testar a api 
+
+import requests
+
+headers = {
+    'accept': 'application/json',
+    'Content-Type': 'application/json',
+}
+
+json_data = {
+    'categorical_features': {
+        'Age': 40,
+        'RestingBP': 140,
+        'Cholesterol': 289,
+        'FastingBS': 0,
+        'MaxHR': 178,
+    },
+    'numerical_features': {
+        'Sex': 'M',
+        'ChestPainType': 'ATA',
+        'RestingECG': 'Normal',
+        'ExerciseAngina': 'N',
+        'ST_Slope': 'Up',
+    },
+}
+
+response = requests.post('http://127.0.0.1:8000/predict', headers=headers, json=json_data)
+print(response.status_code)
+print(response.json())

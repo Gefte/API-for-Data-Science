@@ -79,11 +79,12 @@ def save_models(model: XGBClassifier, preprocessor: ColumnTransformer, model_fil
     - encoder_file (str): The filename to use for the encoder file.
     """
     logger.info(f"Saving model to file {model_file}")
-    with open(model_file, 'wb') as f:
-        pickle.dump(model, f)
+    model.save_model(model_file)
+    
     logger.info(f"Saving scaler to file {scaler_file}")
     with open(scaler_file, 'wb') as f:
         pickle.dump(preprocessor.named_transformers_['num'], f)
+        
     logger.info(f"Saving encoder to file {encoder_file}")
     with open(encoder_file, 'wb') as f:
         pickle.dump(preprocessor.named_transformers_['cat'], f)
@@ -102,10 +103,13 @@ def load_models(scaler_file: str, encoder_file: str, model_file: str) -> Tuple:
     """
     with open(scaler_file, 'rb') as f:
         scaler = pickle.load(f)
+    
     with open(encoder_file, 'rb') as f:
         encoder = pickle.load(f)
-    with open(model_file, 'rb') as f:
-        model = pickle.load(f)
+        
+    model = XGBClassifier()
+    model.load_model(model_file)
+    
     return scaler, encoder, model
 
 def predict(data: pd.DataFrame, scaler: StandardScaler, encoder: OneHotEncoder, model: XGBClassifier, numerical_features: List[str], categorical_features: List[str]) -> Dict[str, List[float]]:
@@ -144,10 +148,10 @@ def main():
     model = train_model(X, y)
 
     # Save models
-    save_models(model, preprocessor, "models/model.pkl", "models/scaler.pkl", "models/encoder.pkl")
+    save_models(model, preprocessor, "models/model.json", "models/scaler.pkl", "models/encoder.pkl")
 
     # Load models
-    scaler, encoder, model = load_models("models/scaler.pkl", "models/encoder.pkl", "models/model.pkl")
+    scaler, encoder, model = load_models("models/scaler.pkl", "models/encoder.pkl", "models/model.json")
 
     # Make predictions
     df_index = pd.DataFrame(data.drop("HeartDisease", axis=1).dtypes).reset_index()
