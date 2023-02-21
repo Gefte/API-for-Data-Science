@@ -3,8 +3,10 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from xgboost import XGBClassifier
-import joblib
 import logging
+from typing import List, Tuple, Dict
+import pickle
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +36,10 @@ def preprocess_data(X: pd.DataFrame) -> (pd.DataFrame, ColumnTransformer):
     - A tuple containing the preprocessed data and the ColumnTransformer used to preprocess it.
     """
     logger.info("Preprocessing data")
-    categorical_cols = ['sex', 'cp', 'fbs', 'restecg', 'exang', 'slope', 'ca', 'thal']
-    numeric_cols = ['age', 'trestbps', 'chol', 'thalach', 'oldpeak']
+    df_index = pd.DataFrame(X.dtypes).reset_index()
+    
+    categorical_cols = df_index.loc[df_index[0]=='object']['index'].to_list()
+    numeric_cols = df_index.loc[df_index[0]=='int64']['index'].to_list()
     numeric_transformer = StandardScaler()
     categorical_transformer = OneHotEncoder()
     preprocessor = ColumnTransformer(transformers=[
@@ -75,14 +79,16 @@ def save_models(model: XGBClassifier, preprocessor: ColumnTransformer, model_fil
     - encoder_file (str): The filename to use for the encoder file.
     """
     logger.info(f"Saving model to file {model_file}")
-    joblib.dump(model, model_file)
+    with open(model_file, 'wb') as f:
+        pickle.dump(model, f)
     logger.info(f"Saving scaler to file {scaler_file}")
-    joblib.dump(preprocessor.named_transformers_['num'], scaler_file)
+    with open(scaler_file, 'wb') as f:
+        pickle.dump(preprocessor.named_transformers_['num'], f)
     logger.info(f"Saving encoder to file {encoder_file}")
-    joblib.dump(preprocessor.named_transformers_['cat'], encoder_file)
+    with open(encoder_file, 'wb') as f:
+        pickle.dump(preprocessor.named_transformers_['cat'], f)
 
-
-def load_models(scaler_file: str, encoder_file: str, model_file: str):
+def load_models(scaler_file: str, encoder_file: str, model_file: str) -> Tuple:
     """
     Load the scaler, encoder, and XGBoost model from disk.
 
@@ -94,14 +100,15 @@ def load_models(scaler_file: str, encoder_file: str, model_file: str):
     Returns:
     - A tuple containing the scaler, encoder, and XGBoost model objects.
     """
-    scaler = joblib.load(scaler_file)
-    encoder = joblib.load(encoder_file)
-    model = XGBClassifier()
-    model.load_model(model_file)
-
+    with open(scaler_file, 'rb') as f:
+        scaler = pickle.load(f)
+    with open(encoder_file, 'rb') as f:
+        encoder = pickle.load(f)
+    with open(model_file, 'rb') as f:
+        model = pickle.load(f)
     return scaler, encoder, model
 
-def predict(data: pd.DataFrame, scaler: StandardScaler, encoder: OneHotEncoder, model: XGBClassifier) -> List[float]:
+def predict(data: pd.DataFrame, scaler: StandardScaler, encoder: OneHotEncoder, model: XGBClassifier, numerical_features: List[str], categorical_features: List[str]) -> Dict[str, List[float]]:
     """
     Makes predictions using a saved machine learning model.
 
@@ -110,78 +117,45 @@ def predict(data: pd.DataFrame, scaler: StandardScaler, encoder: OneHotEncoder, 
     - scaler (StandardScaler): The trained scaler used to scale the data.
     - encoder (OneHotEncoder): The trained encoder used to encode categorical features.
     - model (XGBClassifier): The trained machine learning model.
+    - numerical_features (List[str]): The names of the numerical features in the input data.
+    - categorical_features (List[str]): The names of the categorical features in the input data.
 
     Returns:
-    - A list with the predicted probabilities for each sample in the input data.
+    - A dictionary containing the predicted class and probability for each sample in the input data.
     """
-    
+
     scaled_data = scaler.transform(data[numerical_features])
-
- 
     encoded_data = encoder.transform(data[categorical_features]).toarray()
-
-    
     preprocessed_data = np.concatenate([scaled_data, encoded_data], axis=1)
+    probabilities = model.predict_proba(preprocessed_data)
+    predictions = model.predict(preprocessed_data)
 
-    predictions = model.predict_proba(preprocessed_data)[:, 1]
+    return {"predictions": predictions, "probabilities": probabilities[:, 1].tolist()}
 
-    return predictions
+def main():
+    # Load data
+    data = load_data("models/heart.csv")
 
+    # Preprocess data
+    X, preprocessor = preprocess_data(data.drop("HeartDisease", axis=1))
+    y = data["HeartDisease"]
 
-def main(train_data_path: str, saved_model_path: str, input_data_path: str = None, output_data_path: str = None):
-    """
-    Train, save, load and use a machine learning model to make predictions.
+    # Train model
+    model = train_model(X, y)
 
-    Parameters:
-    - train_data_path (str): The path to the CSV file containing the training data.
-    - saved_model_path (str): The path to save or load the trained model.
-    - input_data_path (str): The path to the CSV file containing the input data to make predictions on.
-    - output_data_path (str): The path to save the predicted data.
+    # Save models
+    save_models(model, preprocessor, "models/model.pkl", "models/scaler.pkl", "models/encoder.pkl")
 
-    Returns:
-    - None.
-    """
+    # Load models
+    scaler, encoder, model = load_models("models/scaler.pkl", "models/encoder.pkl", "models/model.pkl")
 
-    train_data = pd.read_csv(train_data_path)
-
-    
-    X = train_data.drop(columns=['target'])
-    y = train_data['target']
-
- 
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    
-    scaler = StandardScaler()
-    encoder = OneHotEncoder()
-
-   
-    scaled_train_data = scaler.fit_transform(X_train[numerical_features])
-    encoded_train_data = encoder.fit_transform(X_train[categorical_features]).toarray()
-
-   
-    preprocessed_train_data = np.concatenate([scaled_train_data, encoded_train_data], axis=1)
-
- 
-    model = XGBClassifier()
-    model.fit(preprocessed_train_data, y_train)
-
-
-    scaled_val_data = scaler.transform(X_val[numerical_features])
-    encoded_val_data = encoder.transform(X_val[categorical_features]).toarray()
-    preprocessed_val_data = np.concatenate([scaled_val_data, encoded_val_data], axis=1)
-    val_preds = model.predict(preprocessed_val_data)
-    print(f"Validation accuracy: {accuracy_score(y_val, val_preds)}")
-
-
-    with open(saved_model_path, 'wb') as f:
-        pickle.dump({'scaler': scaler, 'encoder': encoder, 'model': model}, f)
-
-
-    if input_data_path:
-        input_data
-
-
+    # Make predictions
+    df_index = pd.DataFrame(data.drop("HeartDisease", axis=1).dtypes).reset_index()
+    numerical_features = df_index.loc[df_index[0]=='int64']['index'].to_list()
+    categorical_features = df_index.loc[df_index[0]=='object']['index'].to_list()
+    new_data = pd.DataFrame(data.drop("HeartDisease", axis=1).loc[0]).T
+    predictions = predict(new_data, scaler, encoder, model, numerical_features, categorical_features)
+    print(predictions)
 
 if __name__ == "__main__":
     main()
