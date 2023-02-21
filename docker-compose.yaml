@@ -1,23 +1,18 @@
 version: '3'
 
 services:
-  backend:
-    build: ./app/backend
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./app/backend:/app/backend
-    networks:
-      - app-network
-
   frontend:
-    build: ./app/frontend
+    build:
+      context: ./app/frontend
+      dockerfile: Dockerfile
     ports:
       - "8501:8501"
-    volumes:
-      - ./app/frontend:/app/frontend
-    networks:
-      - app-network
+    depends_on:
+      - backend
 
-networks:
-  app-network:
+  backend:
+    build:
+      context: ./app/backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"

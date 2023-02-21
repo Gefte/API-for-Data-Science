@@ -9,7 +9,8 @@ def make_prediction(json_data):
     'Content-Type': 'application/json',
     }
     
-    url = 'http://127.0.0.1:8000/predict'
+    url = 'http://backend:8000/predict'
+
     
     response = requests.post(url, headers=headers, json=json_data)
     if response.status_code == 200:
