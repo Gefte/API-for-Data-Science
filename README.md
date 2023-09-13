@@ -40,6 +40,19 @@ Este projeto é um estudo de caso de machine learning com uma API construída co
 ```bash
     docker-compose up
 ```
+6. Para acessar o aplicativo, clique no seguinte link em seu navegador:
+
+   [http://172.24.0.3:8501](http://172.24.0.3:8501)
+
+   Ou você pode copiar e colar o seguinte código em seu terminal:
+
+    ```copy code
+        http://172.24.0.3:8501
+    ```
+
+⚠️ **Certifique-se de que o Docker Compose esteja em execução enquanto você acessa o aplicativo no navegador.** ⚠️
+
+
 
 # Estrutura do projeto
 O projeto possui a seguinte estrutura de diretórios:
