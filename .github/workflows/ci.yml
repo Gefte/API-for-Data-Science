@@ -1,0 +1,20 @@
+ name: Integração Contínua
+
+ on:
+    pull_request:
+        branches:
+            - main
+ jobs:
+    executa_linter:
+        runs-on: ubuntu-lastest
+        steps:
+            - name: Realiza o checkout
+              uses: actions/checkout@v2
+            
+            - name: Instalar o python 3.10
+              uses: actions/setup-python@v4
+              with:
+                python-version: 3.10
+            
+            - name: Roda container
+              run: docker-compose build
