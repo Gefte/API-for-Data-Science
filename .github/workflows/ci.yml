@@ -19,5 +19,11 @@
             - name: Roda container
               run: docker-compose build
             
-            - name: executa container
+            - name: Executa container
               run:  docker-compose up
+            
+            - name: Verifica container
+              run: docker compose ps -a
+            
+            - name: Finalizar container
+              run: docker compose down
