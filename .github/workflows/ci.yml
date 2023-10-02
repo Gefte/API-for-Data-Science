@@ -19,8 +19,6 @@
             - name: Roda container
               run: docker-compose build
             
-            - name: Executa container
-              run:  docker-compose up
             
             - name: Verifica container
               run: docker compose ps -a
