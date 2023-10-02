@@ -6,7 +6,7 @@
             - main
  jobs:
     executa_linter:
-        runs-on: ubuntu-lastest
+        runs-on: ubuntu-latest
         steps:
             - name: Realiza o checkout
               uses: actions/checkout@v2
